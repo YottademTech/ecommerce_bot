@@ -1,5 +1,6 @@
 import { Context } from 'telegraf';
-import { BotSession } from '../types/session';
+import { v4 as uuidv4 } from 'uuid';
+import { BotSession, SessionStep } from '../types/session';
 import redisClient from './redisClient';
 
 // Views
@@ -72,5 +73,27 @@ export async function sendServicesMenuViewMessage(message: string,ctx: Context) 
       one_time_keyboard: true
     }
   });
+}
+
+export async function startHandler(ctx: Context) {
+  const userId = ctx.from?.id;
+  const session = userId ? await sessionExists(userId) : null;
+
+  switch (session?.step) {
+    case SessionStep.OTP_SENT:
+      return ctx.reply('You have already started the process. Please continue with the OTP verification.');
+    case SessionStep.OTP_VERIFIED:
+      return sendServicesMenuViewMessage("Welcome back! Choose an option", ctx);
+    default: {
+      const session: BotSession = {
+        id: userId,
+        requestId: uuidv4(),
+        step: SessionStep.USER_CONNECTED,
+        dateCreated: new Date().toISOString()
+      };
+      await updateSessionStep(session, 180);
+      return sendWelcomeViewMessage(ctx);
+    }
+  }
 }
 

@@ -4,7 +4,7 @@ import { Telegraf } from 'telegraf';
 import { v4 as uuidv4 } from 'uuid';
 import redisClient from './services/redisClient';
 import { verifyOtp } from './services/redisClientservice';
-import { reSharePhoneNumberViewMessage, sendOtpViewMessage, sendServicesMenuViewMessage, sendWelcomeViewMessage, sessionExists, updateSessionStep } from './services/utilservice';
+import { reSharePhoneNumberViewMessage, sendOtpViewMessage, sendServicesMenuViewMessage, sendWelcomeViewMessage, sessionExists, startHandler, updateSessionStep } from './services/utilservice';
 import { BotSession, SessionStep } from './types/session';
 
 dotenv.config();
@@ -18,30 +18,7 @@ const bot = new Telegraf(BOT_TOKEN);
 const BACKEND_URL = process.env.BACKEND_URL as string;
 
 // Simple bot command for testing
-bot.start(async (ctx) => {
-  const userId = ctx.from?.id;
-  const session = userId ? await sessionExists(userId) : null;
-
-  switch (session?.step) {
-    case SessionStep.OTP_SENT:
-      return ctx.reply('You have already started the process. Please continue with the OTP verification.');
-    case SessionStep.OTP_VERIFIED:
-      return sendServicesMenuViewMessage("Welcome back! Choose an option",ctx);
-    
-    default: {
-      const session: BotSession = {
-        id: userId,
-        requestId: uuidv4(),
-        step: SessionStep.USER_CONNECTED,
-        dateCreated: new Date().toISOString()
-      };
-
-      const sessionUpdated = await updateSessionStep(session, 180);
-
-      return sendWelcomeViewMessage(ctx);
-    }
-  }
-});
+bot.start(startHandler);
 
 // Handle contact message (when user shares their phone number)
 bot.on('contact', async (ctx) => {
@@ -50,24 +27,7 @@ bot.on('contact', async (ctx) => {
   const session = userId ? await sessionExists(userId) : null;
 
   if(!session){
-    const session: BotSession = {
-      id: userId,
-      requestId: uuidv4(),
-      step: SessionStep.USER_CONNECTED,
-      dateCreated: new Date().toISOString()
-    };
-
-    await updateSessionStep(session, 180);
-
-    return sendWelcomeViewMessage(ctx);
-  }
-
-  switch (session?.step) {
-    case SessionStep.OTP_SENT:
-      return reSharePhoneNumberViewMessage(ctx);
-    // Add more cases as needed for other steps
-    default:
-      break;
+    return await startHandler(ctx);
   }
 
   const phone = ctx.message.contact?.phone_number;

@@ -21,6 +21,7 @@ EXPOSE 6194
 
 # Set environment variables (optional, can be set in Coolify UI)
 # ENV NODE_ENV=production
+# REDIS_URL will be set at runtime by Coolify
 
 # Start the bot using ts-node
 CMD ["npx", "ts-node", "src/index.ts"] 
