@@ -132,7 +132,7 @@ bot.on('text', async (ctx) => {
 // Launch the bot (polling mode for development)
 bot.launch().then(() => {
   // Replace YOUR_CHAT_ID with your actual Telegram user ID
-  bot.telegram.sendMessage("@devdavidems", 'Beauty Shop Bot has started and is ready!');
+  bot.telegram.sendMessage(process.env.ADMIN_CHAT_ID as string, 'Beauty Shop Bot has started and is ready!');
 });
 
 // Express health check endpoint
