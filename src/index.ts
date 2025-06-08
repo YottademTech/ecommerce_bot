@@ -4,7 +4,7 @@ import { Telegraf } from 'telegraf';
 import { v4 as uuidv4 } from 'uuid';
 import redisClient from './services/redisClient';
 import { verifyOtp } from './services/redisClientservice';
-import { reSharePhoneNumberViewMessage, sendOtpViewMessage, sendServicesMenuViewMessage, sendWelcomeViewMessage, sessionExists, startHandler, updateSessionStep } from './services/utilservice';
+import { openShopViewMessage, reSharePhoneNumberViewMessage, sendOtpViewMessage, sendWelcomeViewMessage, sessionExists, startHandler, updateSessionStep } from './services/utilservice';
 import { BotSession, SessionStep } from './types/session';
 
 dotenv.config();
@@ -23,7 +23,6 @@ bot.start(startHandler);
 // Handle contact message (when user shares their phone number)
 bot.on('contact', async (ctx) => {
   const userId = ctx.from?.id;
-  console.log("on contact",userId);
   const session = userId ? await sessionExists(userId) : null;
 
   if(!session){
@@ -32,7 +31,6 @@ bot.on('contact', async (ctx) => {
 
   const phone = ctx.message.contact?.phone_number;
   if (phone) {
-    ctx.reply(`Thank you! Your phone number (${phone}) has been received.`);
     // Here you can store the phone number in Redis or perform other actions
 
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
@@ -58,7 +56,6 @@ bot.on('contact', async (ctx) => {
     }
 
   } else {
-     console.log('Failed to receive your phone number. Please try again.');
      return sendWelcomeViewMessage(ctx)
   }
 });
@@ -110,14 +107,12 @@ bot.on('text', async (ctx) => {
 
           ctx.reply('OTP verified successfully!');
 
-          return sendServicesMenuViewMessage("Choose an option",ctx);
+          return openShopViewMessage(ctx,'inline');
           // You can update the session or proceed to the next step here
         } else {
           ctx.reply('Invalid or expired OTP. Please try again.');
         }
-      } else if (otpInput && !phone) {
-        ctx.reply('Could not find your phone number. Please restart the process.');
-      } else {
+      }  else {
         // If the message is not an OTP or button, you can ignore or prompt again
         ctx.reply('Please enter the 6-digit OTP sent to your phone number or use the provided button.');
       }

@@ -1,7 +1,10 @@
+import dotenv from 'dotenv';
 import { Context } from 'telegraf';
 import { v4 as uuidv4 } from 'uuid';
 import { BotSession, SessionStep } from '../types/session';
 import redisClient from './redisClient';
+
+dotenv.config();
 
 // Views
 
@@ -20,7 +23,8 @@ export async function reSharePhoneNumberViewMessage(ctx: Context) {
       reply_markup: {
         keyboard: [[{ text: 'Share phone number', request_contact: true }]],
         resize_keyboard: false,
-        one_time_keyboard: true
+        one_time_keyboard: true,
+        
       }
     });
   }
@@ -83,7 +87,7 @@ export async function startHandler(ctx: Context) {
     case SessionStep.OTP_SENT:
       return ctx.reply('You have already started the process. Please continue with the OTP verification.');
     case SessionStep.OTP_VERIFIED:
-      return sendServicesMenuViewMessage("Welcome back! Choose an option", ctx);
+      return openShopViewMessage(ctx, 'inline');
     default: {
       const session: BotSession = {
         id: userId,
@@ -97,3 +101,40 @@ export async function startHandler(ctx: Context) {
   }
 }
 
+export async function openShopViewMessage(ctx: Context, type: 'inline' | 'menu' | 'link' = 'inline') {
+  const url = process.env.MINI_APP_URL as string;
+  if (type === 'inline') {
+    return ctx.reply("<b>Let's get started</b>\n\nPlease tap the button below to order now!", {
+      parse_mode: 'HTML',
+      reply_markup: {
+        inline_keyboard: [
+          [
+            {
+              text: 'Open Shop',
+              web_app: { url }
+            }
+          ]
+        ],
+        resize_keyboard: false,
+        one_time_keyboard: false
+      }
+    });
+  } else if (type === 'menu') {
+    return ctx.reply('Open the shop:', {
+      reply_markup: {
+        keyboard: [
+          [
+            {
+              text: 'Open Shop',
+              web_app: { url }
+            }
+          ]
+        ],
+        resize_keyboard: true,
+        one_time_keyboard: false
+      }
+    });
+  } else if (type === 'link') {
+    return ctx.reply(`Open the shop: ${url}`);
+  }
+}
